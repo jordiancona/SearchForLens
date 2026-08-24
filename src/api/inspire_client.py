@@ -23,27 +23,30 @@ class InspireClient:
         terms = []
 
         if preset_type == "strong_lensing":
-            terms.append('(title:"strong gravitational lensing" OR abstract:"strong gravitational lensing" OR title:"strong lensing" OR abstract:"strong lensing")')
+            terms.append('("strong gravitational lensing" OR "strong lensing")')
         elif preset_type == "ai_lensing":
-            lens_q = '(title:"gravitational lensing" OR abstract:"gravitational lensing" OR title:"strong lensing" OR abstract:"strong lensing")'
-            ai_q = '(abstract:"machine learning" OR abstract:"deep learning" OR abstract:"neural network" OR abstract:"artificial intelligence" OR abstract:"surrogate model")'
+            lens_q = '("gravitational lensing" OR "strong lensing")'
+            ai_q = '("machine learning" OR "deep learning" OR "neural network" OR "artificial intelligence" OR "surrogate model")'
             terms.append(f'({lens_q} AND {ai_q})')
         else:
             if custom_query.strip():
                 q_clean = custom_query.strip()
-                terms.append(f'(title:"{q_clean}" OR abstract:"{q_clean}")')
+                if " " in q_clean and not (q_clean.startswith('"') and q_clean.endswith('"')):
+                    terms.append(f'"{q_clean}"')
+                else:
+                    terms.append(q_clean)
 
         if author.strip():
             terms.append(f'author:"{author.strip()}"')
 
         if start_year and end_year:
-            terms.append(f'earliest_date:{start_year}->{end_year}')
+            terms.append(f'date:{start_year}->{end_year}')
         elif start_year:
-            terms.append(f'earliest_date:{start_year}->2026')
+            terms.append(f'date:{start_year}->2026')
         elif end_year:
-            terms.append(f'earliest_date:1900->{end_year}')
+            terms.append(f'date:1900->{end_year}')
 
-        query_str = " AND ".join(terms) if terms else 'title:"gravitational lensing"'
+        query_str = " AND ".join(terms) if terms else '"gravitational lensing"'
         return query_str
 
     def search(
@@ -67,7 +70,8 @@ class InspireClient:
         }
 
         headers = {
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": "SearchForLens/1.0 (Gravitational Lensing Research Tool)"
         }
 
         try:

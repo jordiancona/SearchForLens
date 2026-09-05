@@ -60,6 +60,13 @@ class Article:
             raw_bibtex=data.get("raw_bibtex"),
         )
 
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), ensure_ascii=False)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "Article":
+        return cls.from_dict(json.loads(json_str))
+
     def generate_bibtex(self) -> str:
         """Generate standard BibTeX string if raw_bibtex is not available."""
         if self.raw_bibtex:

@@ -116,6 +116,14 @@ class ConfigManager:
         self._config["gdrive_folder_name"] = name.strip()
         self.save()
 
+    def get_google_client_id(self) -> str:
+        env_vars = self._load_env_file()
+        return env_vars.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID", "")
+
+    def get_google_client_secret(self) -> str:
+        env_vars = self._load_env_file()
+        return env_vars.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET", "")
+
     # --- Favorites System ---
     def get_favorites(self) -> List[Article]:
         fav_dicts = self._config.get("favorites", [])

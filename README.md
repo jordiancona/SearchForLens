@@ -35,12 +35,23 @@ Una aplicación de escritorio moderna desarrollada con **PyQt6** para buscar, re
 
 ## 🚀 Instalación y Uso
 
-### 📦 Descarga directa (Recomendado)
+### 📱 Aplicación Móvil / Web App (PWA - iOS y Android)
 
-Para instalar y utilizar **SearchForLens**, únicamente debes **descargar la última versión ejecutable desde la sección de Releases**:
+Puedes utilizar **SearchForLens** directamente en tu teléfono (**iPhone o Android**) como una aplicación nativa instalable sin costo:
+
+1. Abre el enlace de la **Web App / PWA**: `https://<tu-usuario>.github.io/SearchForLens/`
+2. **En iPhone (Safari):** Presiona el botón de **Compartir** (cuadro con flecha hacia arriba) y selecciona **"Agregar a la pantalla de inicio"**.
+3. **En Android (Chrome):** Presiona el menú **(⋮)** y selecciona **"Instalar aplicación"** o **"Agregar a la pantalla de inicio"**.
+4. ¡Listo! Se creará un icono en tu menú de aplicaciones y podrás usar SearchForLens en pantalla completa.
+
+---
+
+### 📦 Descarga directa de Escritorio (macOS / Windows)
+
+Para utilizar la aplicación de escritorio en **macOS**, **Windows** o **Linux**:
 
 1. Dirígete a la pestaña de **Releases** en el repositorio.
-2. Descarga el ejecutable correspondiente a tu sistema operativo (macOS, Windows o Linux).
+2. Descarga el ejecutable correspondiente a tu sistema operativo.
 3. Abre la aplicación directamente. **No requiere instalación de Python ni configuración de dependencias.**
 
 ---

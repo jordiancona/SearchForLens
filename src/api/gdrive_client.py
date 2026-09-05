@@ -51,13 +51,27 @@ class GDriveClient:
                 print(f"Error refreshing Google Drive token: {e}")
                 self.creds = None
 
-        # If no valid token exists, initiate OAuth Flow with credentials.json
+        # If no valid token exists, initiate OAuth Flow
         if not self.creds or not self.creds.valid:
-            if not cred_path or not os.path.exists(cred_path):
-                return False, "No se encontró el archivo de credenciales 'credentials.json'."
+            client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+            client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
             try:
-                flow = InstalledAppFlow.from_client_secrets_file(cred_path, SCOPES)
+                if cred_path and os.path.exists(cred_path):
+                    flow = InstalledAppFlow.from_client_secrets_file(cred_path, SCOPES)
+                elif client_id and client_secret:
+                    client_config = {
+                        "installed": {
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token",
+                        }
+                    }
+                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+                else:
+                    return False, "No se encontró el archivo 'credentials.json' ni la configuración GOOGLE_CLIENT_ID."
+
                 self.creds = flow.run_local_server(port=0)
 
                 # Save token locally for future sessions

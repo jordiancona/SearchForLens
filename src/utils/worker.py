@@ -36,110 +36,20 @@ class SearchWorker(QThread):
         self.max_results = max_results
         self.sort_by = sort_by
 
-        self.arxiv_client = ArxivClient()
-        self.ads_client = AdsClient(api_key=self.ads_api_key)
-        self.inspire_client = InspireClient()
+        self.service = SearchService(ads_api_key=self.ads_api_key)
 
     def run(self):
-        articles: List[Article] = []
-        errors: List[str] = []
-
-        query_arxiv = self.source in ("arxiv", "both", "all")
-        query_ads = self.source in ("ads", "both", "all")
-        query_inspire = self.source in ("inspire", "both", "all")
-
-        # --- Query arXiv ---
-        if query_arxiv:
-            self.status_updated.emit("Buscando en arXiv API...")
-            try:
-                arxiv_q = self.arxiv_client.build_preset_query(
-                    preset_type=self.preset_type,
-                    custom_query=self.custom_query,
-                    author=self.author,
-                    start_year=self.start_year,
-                    end_year=self.end_year
-                )
-                sort_order = "submittedDate" if self.sort_by == "date" else "relevance"
-                arxiv_res = self.arxiv_client.search(
-                    query=arxiv_q,
-                    max_results=self.max_results,
-                    sort_by=sort_order
-                )
-                articles.extend(arxiv_res)
-            except Exception as e:
-                errors.append(f"arXiv: {str(e)}")
-
-        # --- Query NASA ADS ---
-        if query_ads:
-            self.status_updated.emit("Buscando en NASA ADS API...")
-            if not self.ads_api_key:
-                errors.append("NASA ADS: Se requiere configurar una API Key en Ajustes.")
-            else:
-                try:
-                    ads_q = self.ads_client.build_preset_query(
-                        preset_type=self.preset_type,
-                        custom_query=self.custom_query,
-                        author=self.author,
-                        start_year=self.start_year,
-                        end_year=self.end_year
-                    )
-                    ads_sort = "date desc"
-                    if self.sort_by == "citations":
-                        ads_sort = "citation_count desc"
-                    elif self.sort_by == "relevance":
-                        ads_sort = "score desc"
-
-                    ads_res = self.ads_client.search(
-                        query=ads_q,
-                        rows=self.max_results,
-                        sort=ads_sort
-                    )
-                    articles.extend(ads_res)
-                except Exception as e:
-                    errors.append(f"NASA ADS: {str(e)}")
-
-        # --- Query INSPIRE-HEP ---
-        if query_inspire:
-            self.status_updated.emit("Buscando en INSPIRE-HEP API...")
-            try:
-                inspire_q = self.inspire_client.build_preset_query(
-                    preset_type=self.preset_type,
-                    custom_query=self.custom_query,
-                    author=self.author,
-                    start_year=self.start_year,
-                    end_year=self.end_year
-                )
-                inspire_res = self.inspire_client.search(
-                    query=inspire_q,
-                    max_results=self.max_results,
-                    sort_by=self.sort_by
-                )
-                articles.extend(inspire_res)
-            except Exception as e:
-                errors.append(f"INSPIRE-HEP: {str(e)}")
-
-        self.status_updated.emit("Procesando y consolidando resultados...")
-
-        # --- Deduplicate results ---
-        merged_articles = self._deduplicate(articles)
-
-        # --- Filter by year if specified ---
-        if self.start_year or self.end_year:
-            merged_articles = self._filter_by_year(merged_articles)
-
-        # --- Sort results ---
-        merged_articles = self._sort_articles(merged_articles)
-
-        # Build summary
-        sources_used = []
-        if query_arxiv:
-            sources_used.append("arXiv")
-        if query_ads:
-            sources_used.append("NASA ADS")
-        if query_inspire:
-            sources_used.append("INSPIRE-HEP")
-
-        source_str = " + ".join(sources_used)
+        merged_articles, errors, source_str = self.service.execute_search(
+            preset_type=self.preset_type,
+            custom_query=self.custom_query,
+            author=self.author,
+            start_year=self.start_year,
+            end_year=self.end_year,
+            source=self.source,
+            max_results=self.max_results,
+            sort_by=self.sort_by,
+            status_callback=lambda msg: self.status_updated.emit(msg)
+        )
 
         if errors and not merged_articles:
             self.error_occurred.emit("\n".join(errors))

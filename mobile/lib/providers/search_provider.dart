@@ -28,6 +28,7 @@ class SearchProvider with ChangeNotifier {
   // Getters
   String get adsApiKey => _adsApiKey;
   String get googleClientId => _googleClientId;
+  String get googleUserEmail => _googleUserEmail;
   String get presetType => _presetType;
   String get customQuery => _customQuery;
   String get author => _author;

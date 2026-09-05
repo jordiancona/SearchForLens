@@ -9,6 +9,7 @@ class SearchProvider with ChangeNotifier {
 
   String _adsApiKey = '';
   String _googleClientId = '';
+  String _googleUserEmail = '';
   String _presetType = 'strong_lensing'; // 'strong_lensing', 'ai_lensing', 'custom'
   String _customQuery = '';
   String _author = '';
@@ -45,6 +46,7 @@ class SearchProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _adsApiKey = prefs.getString('ads_api_key') ?? '';
     _googleClientId = prefs.getString('google_client_id') ?? '';
+    _googleUserEmail = prefs.getString('google_user_email') ?? '';
     
     final favJson = prefs.getStringList('favorites') ?? [];
     _favorites = favJson.map((str) => Article.fromJson(jsonDecode(str))).toList();
@@ -62,6 +64,13 @@ class SearchProvider with ChangeNotifier {
     _googleClientId = id.trim();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('google_client_id', _googleClientId);
+    notifyListeners();
+  }
+
+  Future<void> setGoogleUserEmail(String email) async {
+    _googleUserEmail = email.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('google_user_email', _googleUserEmail);
     notifyListeners();
   }
 

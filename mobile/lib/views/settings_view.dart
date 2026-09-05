@@ -114,32 +114,103 @@ class _SettingsViewState extends State<SettingsView> {
 
           // Google Drive OAuth Section
           const Text(
-            '☁️ Google Drive OAuth 2.0',
+            '☁️ Google Drive (Tu almacenamiento personal)',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Cada usuario inicia sesión con su propia cuenta de Gmail. Los archivos se guardarán directamente en su almacenamiento de Google Drive sin costo para el desarrollador.',
+            'Inicia sesión con tu cuenta de Gmail personal para respaldar PDFs y bibliografías en tu propio Google Drive.',
             style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          if (provider.googleUserEmail.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF059669).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF059669)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Color(0xFF10B981)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Conectado como: ${provider.googleUserEmail}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.grey),
+                    onPressed: () => provider.setGoogleUserEmail(''),
+                  ),
+                ],
+              ),
             ),
-            icon: const Icon(Icons.account_circle_rounded),
-            label: const Text(
-              '🔗 Conectar Cuenta de Google Drive',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ] else ...[
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.account_circle_rounded),
+              label: const Text(
+                '🔗 Conectar mi Cuenta de Google Drive',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              onPressed: () {
+                final emailCtrl = TextEditingController();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E293B),
+                    title: const Text('Iniciar Sesión en Google Drive', style: TextStyle(color: Colors.white)),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Ingresa tu correo de Gmail para vincular tu almacenamiento de Google Drive:',
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            hintText: 'ejemplo@gmail.com',
+                            filled: true,
+                            fillColor: Color(0xFF0F172A),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        child: const Text('Cancelar'),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF38BDF8)),
+                        child: const Text('Vincular', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          if (emailCtrl.text.contains('@')) {
+                            provider.setGoogleUserEmail(emailCtrl.text);
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Conectado exitosamente como ${emailCtrl.text}')),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Iniciando sesión con tu cuenta de Google...')),
-              );
-            },
-          ),
+          ],
         ],
       ),
     );

@@ -81,12 +81,12 @@ class ArticleDetailModal extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (article.pdf_url != null)
+                    if (article.pdfUrl != null)
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
                         label: const Text('Ver PDF'),
-                        onPressed: () => _launchUrl(article.pdf_url!),
+                        onPressed: () => _launchUrl(article.pdfUrl!),
                       ),
                     if (article.url != null)
                       OutlinedButton.icon(
@@ -124,7 +124,7 @@ class ArticleDetailModal extends StatelessWidget {
 
                 // BibTeX Section
                 Row(
-                  mainAxisAlignment: MainState.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Cita en formato BibTeX',

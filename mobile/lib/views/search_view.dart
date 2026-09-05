@@ -29,7 +29,7 @@ class _SearchViewState extends State<SearchView> {
             padding: const EdgeInsets.all(16),
             color: const Color(0xFF1E293B),
             child: Column(
-              crossAxisAlignment: CrossAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Preset Chips
                 SingleChildScrollView(

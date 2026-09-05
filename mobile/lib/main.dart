@@ -31,7 +31,6 @@ class SearchForLensApp extends StatelessWidget {
           primary: Color(0xFF38BDF8),
           secondary: Color(0xFF818CF8), // Indigo 400
           surface: Color(0xFF1E293B), // Slate 800
-          background: Color(0xFF0F172A),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1E293B),

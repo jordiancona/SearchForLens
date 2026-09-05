@@ -91,7 +91,7 @@ class _SearchViewState extends State<SearchView> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.search_rounded, fontWeight: FontWeight.bold),
+                    icon: const Icon(Icons.search_rounded),
                     label: const Text(
                       'Buscar Artículos',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),

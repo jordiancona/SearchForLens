@@ -32,7 +32,7 @@ jobs:
       - name: Build Web App / PWA
         run: |
           cd mobile
-          flutter build web --release --base-href "/SearchForLens/"
+          flutter build web --release --base-href "./"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

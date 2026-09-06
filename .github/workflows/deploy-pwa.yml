@@ -33,6 +33,7 @@ jobs:
         run: |
           cd mobile
           flutter build web --release --base-href "/SearhForLens/"
+          touch build/web/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

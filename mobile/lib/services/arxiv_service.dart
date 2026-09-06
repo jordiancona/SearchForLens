@@ -1,19 +1,67 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
 
 class ArxivService {
   static const String baseUrl = 'https://export.arxiv.org/api/query';
+  static const String localBackendUrl = 'http://localhost:8000/api/search';
 
   Future<List<Article>> search({
     required String query,
     int maxResults = 50,
     String sortBy = 'submittedDate',
   }) async {
-    final Uri url = Uri.parse(
-        '$baseUrl?search_query=$query&start=0&max_results=$maxResults&sortBy=$sortBy&sortOrder=descending');
+    final String rawUrl =
+        '$baseUrl?search_query=$query&start=0&max_results=$maxResults&sortBy=$sortBy&sortOrder=descending';
 
+    if (kIsWeb) {
+      // 1. Local Python Backend (fastest & bypasses all browser CORS/Cloudflare restrictions)
+      try {
+        final Uri backendUrl = Uri.parse(
+            '$localBackendUrl?preset_type=custom&custom_query=${Uri.encodeComponent(query)}&max_results=$maxResults&source=arxiv');
+        final response = await http.get(backendUrl).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final List articlesJson = data['articles'] ?? [];
+          if (articlesJson.isNotEmpty) {
+            return articlesJson.map((j) => Article.fromJson(j)).toList();
+          }
+        }
+      } catch (_) {}
+
+      // 2. AllOrigins JSON Proxy
+      try {
+        final Uri proxyUrl = Uri.parse(
+            'https://api.allorigins.win/get?url=${Uri.encodeComponent(rawUrl)}');
+        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 15));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final xmlStr = data['contents'] as String?;
+          if (xmlStr != null && xmlStr.isNotEmpty) {
+            final articles = _parseAtomXml(xmlStr);
+            if (articles.isNotEmpty) return articles;
+          }
+        }
+      } catch (_) {}
+
+      // 3. CorsProxy fallback
+      try {
+        final Uri proxyUrl = Uri.parse(
+            'https://corsproxy.io/?${Uri.encodeComponent(rawUrl)}');
+        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 15));
+        if (response.statusCode == 200 && response.body.isNotEmpty) {
+          final articles = _parseAtomXml(response.body);
+          if (articles.isNotEmpty) return articles;
+        }
+      } catch (_) {}
+
+      throw Exception('No se pudo conectar con arXiv en Web.');
+    }
+
+    // Direct request for Native platforms (iOS, Android, macOS)
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      final response = await http.get(Uri.parse(rawUrl)).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         return _parseAtomXml(response.body);
       } else {

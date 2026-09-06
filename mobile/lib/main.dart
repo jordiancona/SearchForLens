@@ -48,7 +48,7 @@ class SearchForLensApp extends StatelessWidget {
           selectedItemColor: Color(0xFF38BDF8),
           unselectedItemColor: Colors.grey,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: const Color(0xFF1E293B),
           elevation: 2,
           shape: RoundedRectangleBorder(

@@ -56,17 +56,25 @@
     <div class="spinner"></div>
     <p style="margin-top: 16px; font-size: 16px; font-weight: 600;">Cargando SearchForLens 🔭...</p>
   </div>
-  <script src="flutter.js" defer></script>
   <script>
-    window.addEventListener('load', function(ev) {
-      if (typeof _flutter !== 'undefined') {
-        _flutter.loader.loadEntrypoint({
-          onEntrypointLoaded: function(engineInitializer) {
-            engineInitializer.initializeEngine().then(function(appRunner) {
-              appRunner.runApp();
-            });
-          }
-        });
+    window.addEventListener('flutter-first-frame', function () {
+      var loading = document.getElementById('loading');
+      if (loading) {
+        loading.remove();
+      }
+    });
+  </script>
+  <script>
+    {{flutter_js}}
+    {{flutter_build_config}}
+    _flutter.loader.load({
+      onEntrypointLoaded: async function(engineInitializer) {
+        const appRunner = await engineInitializer.initializeEngine();
+        var loading = document.getElementById('loading');
+        if (loading) {
+          loading.remove();
+        }
+        await appRunner.runApp();
       }
     });
   </script>

@@ -12,7 +12,6 @@ class SearchView extends StatefulWidget {
 
 class _SearchViewState extends State<SearchView> {
   final TextEditingController _customQueryCtrl = TextEditingController();
-  final TextEditingController _authorCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {

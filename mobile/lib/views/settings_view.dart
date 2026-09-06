@@ -13,7 +13,6 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   late TextEditingController _adsKeyCtrl;
-  late TextEditingController _googleClientCtrl;
   bool _isTestingToken = false;
   String? _adsStatusMsg;
 
@@ -22,7 +21,6 @@ class _SettingsViewState extends State<SettingsView> {
     super.initState();
     final provider = Provider.of<SearchProvider>(context, listen: false);
     _adsKeyCtrl = TextEditingController(text: provider.adsApiKey);
-    _googleClientCtrl = TextEditingController(text: provider.googleClientId);
   }
 
   Future<void> _verifyAdsKey() async {

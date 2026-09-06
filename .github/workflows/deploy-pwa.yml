@@ -31,7 +31,8 @@ jobs:
       - name: Build Web App / PWA
         run: |
           cd mobile
-          flutter build web --release --base-href "/SearhForLens/"
+          flutter build web --release --base-href "/SearchForLens/"
+          sed -i '/sourceMappingURL=flutter.js.map/d' build/web/flutter.js || true
           touch build/web/.nojekyll
 
       - name: Deploy to GitHub Pages

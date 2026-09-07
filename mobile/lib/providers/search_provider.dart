@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/article.dart';
+import '../services/google_drive_service.dart';
 import '../services/search_service.dart';
 
 class SearchProvider with ChangeNotifier {
@@ -63,6 +66,7 @@ class SearchProvider with ChangeNotifier {
 
   Future<void> setGoogleClientId(String id) async {
     _googleClientId = id.trim();
+    _googleSignInInstance = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('google_client_id', _googleClientId);
     notifyListeners();
@@ -73,6 +77,86 @@ class SearchProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('google_user_email', _googleUserEmail);
     notifyListeners();
+  }
+
+  GoogleSignInAccount? _googleAccount;
+  GoogleSignInAccount? get googleAccount => _googleAccount;
+
+  GoogleSignIn? _googleSignInInstance;
+
+  GoogleSignIn _getGoogleSignIn() {
+    if (_googleSignInInstance != null) return _googleSignInInstance!;
+    final String? clientId = _googleClientId.trim().isNotEmpty ? _googleClientId.trim() : null;
+    _googleSignInInstance = GoogleSignIn(
+      clientId: clientId,
+      scopes: [
+        'email',
+        'https://www.googleapis.com/auth/drive.file',
+      ],
+    );
+    return _googleSignInInstance!;
+  }
+
+  Future<bool> signInWithGoogle() async {
+    try {
+      final googleSignIn = _getGoogleSignIn();
+      final account = await googleSignIn.signIn();
+      if (account != null) {
+        _googleAccount = account;
+        _googleUserEmail = account.email;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('google_user_email', _googleUserEmail);
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Google Sign-In Error: $e');
+      rethrow;
+    }
+    return false;
+  }
+
+  Future<void> signOutGoogle() async {
+    try {
+      final googleSignIn = _getGoogleSignIn();
+      await googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('Google Sign-Out Error: $e');
+    }
+    _googleAccount = null;
+    _googleUserEmail = '';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('google_user_email');
+    notifyListeners();
+  }
+
+  Future<bool> uploadArticleToDrive(Article article) async {
+    final googleSignIn = _getGoogleSignIn();
+
+    if (_googleAccount == null) {
+      try {
+        _googleAccount = await googleSignIn.signInSilently();
+      } catch (_) {}
+    }
+
+    if (_googleAccount == null) {
+      _googleAccount = await googleSignIn.signIn();
+      if (_googleAccount != null) {
+        _googleUserEmail = _googleAccount!.email;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('google_user_email', _googleUserEmail);
+        notifyListeners();
+      }
+    }
+
+    if (_googleAccount == null) {
+      throw Exception('Por favor inicia sesión con tu cuenta de Google.');
+    }
+
+    return await GoogleDriveService.uploadArticlePdfToDrive(
+      account: _googleAccount!,
+      article: article,
+    );
   }
 
   void updateFilters({

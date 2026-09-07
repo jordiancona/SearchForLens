@@ -1,15 +1,20 @@
+import time
 import requests
 import feedparser
 import re
 from typing import List, Optional
 from src.api.models import Article
 
-ARXIV_API_URL = "http://export.arxiv.org/api/query"
+ARXIV_API_URLS = [
+    "https://export.arxiv.org/api/query",
+    "https://api.arxiv.org/query",
+    "http://export.arxiv.org/api/query",
+]
 
 class ArxivClient:
     """Client for fetching papers from arXiv API."""
 
-    def __init__(self, timeout: int = 15):
+    def __init__(self, timeout: int = 30):
         self.timeout = timeout
 
     def build_preset_query(self, preset_type: str, custom_query: str = "", author: str = "", start_year: Optional[int] = None, end_year: Optional[int] = None) -> str:
@@ -57,21 +62,31 @@ class ArxivClient:
             "sortOrder": sort_order
         }
 
-        try:
-            resp = requests.get(ARXIV_API_URL, params=params, timeout=self.timeout)
-            resp.raise_for_status()
-            feed = feedparser.parse(resp.content)
+        headers = {
+            "User-Agent": "SearchForLens/1.0 (mailto:researcher@searchforlens.org)"
+        }
 
-            articles = []
-            for entry in feed.entries:
-                article = self._parse_entry(entry)
-                if article:
-                    articles.append(article)
-            return articles
+        last_error = None
+        for url in ARXIV_API_URLS:
+            for attempt in range(2):
+                try:
+                    resp = requests.get(url, params=params, headers=headers, timeout=self.timeout)
+                    resp.raise_for_status()
+                    feed = feedparser.parse(resp.content)
 
-        except Exception as e:
-            print(f"Error fetching arXiv data: {e}")
-            raise RuntimeError(f"Error al consultar la API de arXiv: {str(e)}")
+                    articles = []
+                    for entry in feed.entries:
+                        article = self._parse_entry(entry)
+                        if article:
+                            articles.append(article)
+                    return articles
+                except Exception as e:
+                    last_error = e
+                    print(f"arXiv attempt {attempt + 1} on {url} failed: {e}")
+                    time.sleep(1)
+
+        print(f"Error fetching arXiv data after retries: {last_error}")
+        return []
 
     def _parse_entry(self, entry) -> Optional[Article]:
         """Parse feedparser entry into an Article object."""

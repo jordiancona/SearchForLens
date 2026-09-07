@@ -76,36 +76,41 @@ class ArticleDetailModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Action Buttons (PDF, Web, Drive)
+                // Action Buttons (PDF, Local Download, Official Link)
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (article.pdfUrl != null)
+                    if (article.pdfUrl != null) ...[
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
                         label: const Text('Ver PDF'),
                         onPressed: () => _launchUrl(article.pdfUrl!),
                       ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669)),
+                        icon: const Icon(Icons.download_rounded, size: 18),
+                        label: const Text('💾 Descargar PDF'),
+                        onPressed: () async {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Descargando "${article.title}" en tu dispositivo... 📥'),
+                                backgroundColor: const Color(0xFF059669),
+                              ),
+                            );
+                          }
+                          await _launchUrl(article.pdfUrl!);
+                        },
+                      ),
+                    ],
                     if (article.url != null)
                       OutlinedButton.icon(
                         icon: const Icon(Icons.open_in_new_rounded, size: 18),
                         label: const Text('Enlace Oficial'),
                         onPressed: () => _launchUrl(article.url!),
                       ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669)),
-                      icon: const Icon(Icons.cloud_upload_rounded, size: 18),
-                      label: const Text('☁️ PDF a Drive'),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Guardando PDF en tu Google Drive personal...'),
-                          ),
-                        );
-                      },
-                    ),
                   ],
                 ),
                 const Divider(height: 32, color: Color(0xFF334155)),

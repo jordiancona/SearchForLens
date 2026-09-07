@@ -20,7 +20,7 @@ class ArxivService {
       try {
         final Uri backendUrl = Uri.parse(
             '$localBackendUrl?preset_type=custom&custom_query=${Uri.encodeComponent(query)}&max_results=$maxResults&source=arxiv');
-        final response = await http.get(backendUrl).timeout(const Duration(seconds: 10));
+        final response = await http.get(backendUrl).timeout(const Duration(seconds: 15));
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final List articlesJson = data['articles'] ?? [];
@@ -34,7 +34,7 @@ class ArxivService {
       try {
         final Uri proxyUrl = Uri.parse(
             'https://api.allorigins.win/get?url=${Uri.encodeComponent(rawUrl)}');
-        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 15));
+        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 25));
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final xmlStr = data['contents'] as String?;
@@ -49,7 +49,7 @@ class ArxivService {
       try {
         final Uri proxyUrl = Uri.parse(
             'https://corsproxy.io/?${Uri.encodeComponent(rawUrl)}');
-        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 15));
+        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 25));
         if (response.statusCode == 200 && response.body.isNotEmpty) {
           final articles = _parseAtomXml(response.body);
           if (articles.isNotEmpty) return articles;
@@ -61,7 +61,7 @@ class ArxivService {
 
     // Direct request for Native platforms (iOS, Android, macOS)
     try {
-      final response = await http.get(Uri.parse(rawUrl)).timeout(const Duration(seconds: 15));
+      final response = await http.get(Uri.parse(rawUrl)).timeout(const Duration(seconds: 25));
       if (response.statusCode == 200) {
         return _parseAtomXml(response.body);
       } else {

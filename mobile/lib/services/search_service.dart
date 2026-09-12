@@ -80,16 +80,21 @@ class UnifiedSearchService {
       }
     }
 
-    // Deduplicate
-    List<Article> merged = _deduplicate(allArticles);
+    // Deduplicate & Process
+    List<Article> merged = allArticles;
+    try {
+      merged = _deduplicate(allArticles);
 
-    // Filter by year
-    if (startYear != null || endYear != null) {
-      merged = _filterByYear(merged, startYear, endYear);
+      // Filter by year
+      if (startYear != null || endYear != null) {
+        merged = _filterByYear(merged, startYear, endYear);
+      }
+
+      // Sort
+      merged = _sortArticles(merged, sortBy);
+    } catch (e) {
+      errors.add('Procesamiento de resultados: $e');
     }
-
-    // Sort
-    merged = _sortArticles(merged, sortBy);
 
     final sourcesUsed = <String>[];
     if (queryArxiv) sourcesUsed.add('arXiv');
@@ -118,7 +123,9 @@ class UnifiedSearchService {
       } else if (article.inspireId != null && article.inspireId!.isNotEmpty) {
         key = 'inspire:${article.inspireId!}';
       } else {
-        key = 'title:${article.title.trim().toLowerCase().substring(0, article.title.length > 50 ? 50 : article.title.length)}';
+        final cleanTitle = article.title.trim().toLowerCase();
+        final maxLen = cleanTitle.length > 50 ? 50 : cleanTitle.length;
+        key = 'title:${cleanTitle.substring(0, maxLen)}';
       }
 
       if (!uniqueMap.containsKey(key)) {

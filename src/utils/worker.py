@@ -4,6 +4,7 @@ from src.api.models import Article
 from src.api.arxiv_client import ArxivClient
 from src.api.ads_client import AdsClient
 from src.api.inspire_client import InspireClient
+from src.api.service import SearchService
 
 class SearchWorker(QThread):
     """Worker thread for non-blocking execution of arXiv, NASA ADS, and INSPIRE-HEP search queries."""

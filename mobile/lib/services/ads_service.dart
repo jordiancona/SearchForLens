@@ -97,10 +97,7 @@ class AdsService {
         final String rawUrl =
             '$searchUrl?q=${Uri.encodeComponent(query)}&fl=id,bibcode,title,author,abstract,pubdate,citation_count,doi,identifier,pub,eprint&rows=$rows&sort=$sort';
         final Uri proxyUrl = Uri.parse('https://api.allorigins.win/get?url=${Uri.encodeComponent(rawUrl)}');
-        final response = await http.get(
-          proxyUrl,
-          headers: {'Authorization': 'Bearer $cleanKey'},
-        ).timeout(const Duration(seconds: 12));
+        final response = await http.get(proxyUrl).timeout(const Duration(seconds: 12));
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final contents = data['contents'] as String?;

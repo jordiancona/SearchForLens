@@ -44,3 +44,8 @@ client_secret*.json
 # Environment & Local Test Exports
 test_export.*
 *.log
+*.zip
+
+# Flutter build files
+.dart_tool/
+

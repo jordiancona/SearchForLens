@@ -8,15 +8,17 @@ from PyQt6.QtCore import Qt
 from src.utils.config import ConfigManager
 from src.api.ads_client import AdsClient
 from src.api.gdrive_client import GDriveClient
+from src.api.zotero_client import ZoteroClient
 
 class SettingsDialog(QDialog):
-    """Configuration window to manage NASA ADS API Token and Google Drive settings."""
+    """Configuration window to manage NASA ADS API Token, Google Drive, and Zotero settings."""
 
     def __init__(self, config_manager: ConfigManager, parent=None):
         super().__init__(parent)
         self.config_manager = config_manager
         self.ads_client = AdsClient()
         self.gdrive_client = GDriveClient()
+        self.zotero_client = ZoteroClient()
         self.setWindowTitle("Configuración & API Keys")
         self.setMinimumSize(600, 480)
         self._init_ui()
@@ -145,6 +147,66 @@ class SettingsDialog(QDialog):
         gdrive_layout.addStretch()
         tabs.addTab(gdrive_tab, "☁️ Google Drive API")
 
+        # --- TAB 3: ZOTERO API ---
+        zotero_tab = QWidget()
+        zotero_layout = QVBoxLayout(zotero_tab)
+        zotero_layout.setContentsMargins(12, 12, 12, 12)
+        zotero_layout.setSpacing(12)
+
+        zotero_info = QLabel(
+            "Sincronice sus artículos de investigación con su biblioteca de Zotero usando la Web API v3.\n"
+            "Requiere su Zotero User ID y una API Key con permisos de escritura."
+        )
+        zotero_info.setWordWrap(True)
+        zotero_info.setStyleSheet("color: #94a3b8; font-size: 12px;")
+        zotero_layout.addWidget(zotero_info)
+
+        # User ID Input
+        uid_label = QLabel("Zotero User ID (numérico):")
+        zotero_layout.addWidget(uid_label)
+        self.input_zotero_user_id = QLineEdit()
+        self.input_zotero_user_id.setPlaceholderText("Ej. 1234567")
+        self.input_zotero_user_id.setText(self.config_manager.get_zotero_user_id())
+        zotero_layout.addWidget(self.input_zotero_user_id)
+
+        # API Key Input
+        key_label = QLabel("Zotero API Key (con permiso de escritura):")
+        zotero_layout.addWidget(key_label)
+        zotero_key_layout = QHBoxLayout()
+        self.input_zotero_api_key = QLineEdit()
+        self.input_zotero_api_key.setEchoMode(QLineEdit.EchoMode.Password)
+        self.input_zotero_api_key.setPlaceholderText("Pegue aquí su API Key de Zotero")
+        self.input_zotero_api_key.setText(self.config_manager.get_zotero_api_key())
+        zotero_key_layout.addWidget(self.input_zotero_api_key)
+
+        self.btn_toggle_zotero_vis = QPushButton("👁️")
+        self.btn_toggle_zotero_vis.setFixedWidth(40)
+        self.btn_toggle_zotero_vis.clicked.connect(self._toggle_zotero_key_visibility)
+        zotero_key_layout.addWidget(self.btn_toggle_zotero_vis)
+        zotero_layout.addLayout(zotero_key_layout)
+
+        # Test Zotero Connection button & Status
+        zotero_test_layout = QHBoxLayout()
+        self.btn_test_zotero = QPushButton("🧪 Probar Conexión con Zotero")
+        self.btn_test_zotero.clicked.connect(self._test_zotero_connection)
+        zotero_test_layout.addWidget(self.btn_test_zotero)
+
+        self.lbl_zotero_status = QLabel("")
+        self.lbl_zotero_status.setWordWrap(True)
+        zotero_test_layout.addWidget(self.lbl_zotero_status)
+        zotero_test_layout.addStretch()
+        zotero_layout.addLayout(zotero_test_layout)
+
+        # Link to create Zotero API key
+        btn_zotero_link = QPushButton("🔗 Crear o consultar API Key en Zotero.org")
+        btn_zotero_link.setStyleSheet("text-align: left; color: #38bdf8; background: transparent; border: none;")
+        btn_zotero_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_zotero_link.clicked.connect(lambda: webbrowser.open("https://www.zotero.org/settings/keys"))
+        zotero_layout.addWidget(btn_zotero_link)
+
+        zotero_layout.addStretch()
+        tabs.addTab(zotero_tab, "📚 Zotero API")
+
         layout.addWidget(tabs)
 
         # Check existing GDrive connection status
@@ -255,6 +317,35 @@ class SettingsDialog(QDialog):
         else:
             QMessageBox.critical(self, "Error", res_name)
 
+    def _toggle_zotero_key_visibility(self):
+        if self.input_zotero_api_key.echoMode() == QLineEdit.EchoMode.Password:
+            self.input_zotero_api_key.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.btn_toggle_zotero_vis.setText("🙈")
+        else:
+            self.input_zotero_api_key.setEchoMode(QLineEdit.EchoMode.Password)
+            self.btn_toggle_zotero_vis.setText("👁️")
+
+    def _test_zotero_connection(self):
+        uid = self.input_zotero_user_id.text().strip()
+        key = self.input_zotero_api_key.text().strip()
+
+        if not uid or not key:
+            self.lbl_zotero_status.setText("⚠️ Ingrese su User ID y API Key de Zotero.")
+            self.lbl_zotero_status.setStyleSheet("color: #fbbf24;")
+            return
+
+        self.lbl_zotero_status.setText("Conectando con Zotero Web API v3...")
+        self.lbl_zotero_status.setStyleSheet("color: #38bdf8;")
+        self.repaint()
+
+        valid, msg = self.zotero_client.verify_credentials(uid, key)
+        if valid:
+            self.lbl_zotero_status.setText(f"✓ {msg}")
+            self.lbl_zotero_status.setStyleSheet("color: #4ade80; font-weight: bold;")
+        else:
+            self.lbl_zotero_status.setText(f"❌ {msg}")
+            self.lbl_zotero_status.setStyleSheet("color: #f87171; font-weight: bold;")
+
     def _save_settings(self):
         token = self.key_input.text().strip()
         self.config_manager.set_ads_api_key(token)
@@ -264,6 +355,12 @@ class SettingsDialog(QDialog):
 
         user_folder = self.input_folder_name.text().strip() or "SearchForLens"
         self.config_manager.set_gdrive_folder_name(user_folder)
+
+        # Zotero Settings
+        z_uid = self.input_zotero_user_id.text().strip()
+        z_key = self.input_zotero_api_key.text().strip()
+        self.config_manager.set_zotero_user_id(z_uid)
+        self.config_manager.set_zotero_api_key(z_key)
 
         # Automatically verify and update folder_id on save if connected
         tok_path = self.config_manager.get_gdrive_token_path()

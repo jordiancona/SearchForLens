@@ -134,6 +134,16 @@ class ArticleDetailDialog(QDialog):
             btn_gdrive_pdf.clicked.connect(self._upload_pdf_gdrive)
             footer_layout.addWidget(btn_gdrive_pdf)
 
+        if self.article.url or self.article.pdf_url:
+            btn_share = QPushButton("🔗 Compartir Enlace")
+            btn_share.clicked.connect(self._share_link)
+            footer_layout.addWidget(btn_share)
+
+        btn_zotero = QPushButton("📚 Guardar en Zotero")
+        btn_zotero.setToolTip("Enviar metadatos del artículo directamente a su biblioteca de Zotero")
+        btn_zotero.clicked.connect(self._upload_zotero)
+        footer_layout.addWidget(btn_zotero)
+
         self.btn_fav = QPushButton("⭐ Favorito" if not self.is_favorite else "★ Quitar Favorito")
         if self.is_favorite:
             self.btn_fav.setObjectName("FavoriteButton")
@@ -158,8 +168,24 @@ class ArticleDetailDialog(QDialog):
             from PyQt6.QtCore import QTimer
             QTimer.singleShot(1500, lambda: (btn.setText(orig_text), btn.setEnabled(True)))
 
+    def _share_link(self):
+        link = self.article.url or self.article.pdf_url or ""
+        if link:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(link)
+            btn = self.sender()
+            if isinstance(btn, QPushButton):
+                orig_text = btn.text()
+                btn.setText("✓ ¡Enlace Copiado!")
+                btn.setEnabled(False)
+                from PyQt6.QtCore import QTimer
+                QTimer.singleShot(1500, lambda: (btn.setText(orig_text), btn.setEnabled(True)))
+
     def _toggle_favorite(self):
         self.done(100)  # Signal parent to toggle favorite
 
     def _upload_pdf_gdrive(self):
         self.done(101)  # Signal parent to upload PDF to Google Drive
+
+    def _upload_zotero(self):
+        self.done(102)  # Signal parent to upload article to Zotero

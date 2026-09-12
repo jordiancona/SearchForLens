@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/article.dart';
 import '../services/google_drive_service.dart';
 import '../services/search_service.dart';
+import '../services/zotero_service.dart';
 
 class SearchProvider with ChangeNotifier {
   final UnifiedSearchService _searchService = UnifiedSearchService();
@@ -13,6 +14,8 @@ class SearchProvider with ChangeNotifier {
   String _adsApiKey = '';
   String _googleClientId = '';
   String _googleUserEmail = '';
+  String _zoteroUserId = '';
+  String _zoteroApiKey = '';
   String _presetType = 'strong_lensing'; // 'strong_lensing', 'ai_lensing', 'custom'
   String _customQuery = '';
   String _author = '';
@@ -32,6 +35,8 @@ class SearchProvider with ChangeNotifier {
   String get adsApiKey => _adsApiKey;
   String get googleClientId => _googleClientId;
   String get googleUserEmail => _googleUserEmail;
+  String get zoteroUserId => _zoteroUserId;
+  String get zoteroApiKey => _zoteroApiKey;
   String get presetType => _presetType;
   String get customQuery => _customQuery;
   String get author => _author;
@@ -51,6 +56,8 @@ class SearchProvider with ChangeNotifier {
     _adsApiKey = prefs.getString('ads_api_key') ?? '';
     _googleClientId = prefs.getString('google_client_id') ?? '';
     _googleUserEmail = prefs.getString('google_user_email') ?? '';
+    _zoteroUserId = prefs.getString('zotero_user_id') ?? '';
+    _zoteroApiKey = prefs.getString('zotero_api_key') ?? '';
     
     final favJson = prefs.getStringList('favorites') ?? [];
     _favorites = favJson.map((str) => Article.fromJson(jsonDecode(str))).toList();
@@ -61,6 +68,20 @@ class SearchProvider with ChangeNotifier {
     _adsApiKey = key.trim();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('ads_api_key', _adsApiKey);
+    notifyListeners();
+  }
+
+  Future<void> setZoteroUserId(String id) async {
+    _zoteroUserId = id.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('zotero_user_id', _zoteroUserId);
+    notifyListeners();
+  }
+
+  Future<void> setZoteroApiKey(String key) async {
+    _zoteroApiKey = key.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('zotero_api_key', _zoteroApiKey);
     notifyListeners();
   }
 
@@ -225,5 +246,29 @@ class SearchProvider with ChangeNotifier {
     final favStrings = _favorites.map((a) => jsonEncode(a.toJson())).toList();
     await prefs.setStringList('favorites', favStrings);
     notifyListeners();
+  }
+
+  Future<bool> uploadArticleToZotero(Article article) async {
+    if (_zoteroUserId.isEmpty || _zoteroApiKey.isEmpty) {
+      throw Exception('Por favor configura tu User ID y API Key de Zotero en Ajustes.');
+    }
+
+    return await ZoteroService.createItem(
+      userId: _zoteroUserId,
+      apiKey: _zoteroApiKey,
+      article: article,
+    );
+  }
+
+  Future<int> exportArticlesToZotero(List<Article> articles) async {
+    if (_zoteroUserId.isEmpty || _zoteroApiKey.isEmpty) {
+      throw Exception('Por favor configura tu User ID y API Key de Zotero en Ajustes.');
+    }
+
+    return await ZoteroService.createItemsBatch(
+      userId: _zoteroUserId,
+      apiKey: _zoteroApiKey,
+      articles: articles,
+    );
   }
 }

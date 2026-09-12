@@ -16,6 +16,8 @@ class FavoritesPanel(QWidget):
     favorites_changed = pyqtSignal()
     gdrive_export_requested = pyqtSignal(list, str)
     gdrive_pdf_requested = pyqtSignal(Article)
+    zotero_export_requested = pyqtSignal(list)
+    zotero_single_requested = pyqtSignal(Article)
 
     def __init__(self, config_manager: ConfigManager, parent=None):
         super().__init__(parent)
@@ -112,6 +114,8 @@ class FavoritesPanel(QWidget):
             self._remove_favorite(article)
         elif res == 101:  # code when user requests PDF upload to Google Drive
             self.gdrive_pdf_requested.emit(article)
+        elif res == 102:  # code when user requests upload to Zotero
+            self.zotero_single_requested.emit(article)
 
     def _remove_favorite(self, article: Article):
         self.config_manager.remove_favorite(article.id)
@@ -134,6 +138,8 @@ class FavoritesPanel(QWidget):
         act_gd_bib = menu.addAction("☁️ Subir Favoritos BibTeX a Google Drive")
         act_gd_csv = menu.addAction("☁️ Subir Favoritos CSV a Google Drive")
         act_gd_json = menu.addAction("☁️ Subir Favoritos JSON a Google Drive")
+        menu.addSeparator()
+        act_zotero = menu.addAction("📚 Sincronizar Favoritos a Zotero")
 
         action = menu.exec(self.cursor().pos())
         if action == act_bib:
@@ -148,6 +154,8 @@ class FavoritesPanel(QWidget):
             self.gdrive_export_requested.emit(self.favorites, "csv")
         elif action == act_gd_json:
             self.gdrive_export_requested.emit(self.favorites, "json")
+        elif action == act_zotero:
+            self.zotero_export_requested.emit(self.favorites)
 
     def _export_to_file(self, filter_str: str, export_func):
         file_path, _ = QFileDialog.getSaveFileName(self, "Guardar Favoritos", "", filter_str)

@@ -16,6 +16,22 @@ class ArxivService {
         '$baseUrl?search_query=$query&start=0&max_results=$maxResults&sortBy=$sortBy&sortOrder=descending';
 
     if (kIsWeb) {
+      // 0. Try local Python backend
+      try {
+        final Uri url = Uri.parse(
+            '$localBackendUrl?preset_type=custom&custom_query=${Uri.encodeComponent(query)}&max_results=$maxResults&source=arxiv');
+        final response = await http.get(url).timeout(const Duration(seconds: 4));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final List articlesJson = data['articles'] ?? [];
+          if (articlesJson.isNotEmpty) {
+            return articlesJson
+                .map((j) => Article.fromJson(Map<String, dynamic>.from(j)))
+                .toList();
+          }
+        }
+      } catch (_) {}
+
       // 1. Direct Request (works if browser allows or pre-cached)
       try {
         final response = await http.get(Uri.parse(rawUrl)).timeout(const Duration(seconds: 8));

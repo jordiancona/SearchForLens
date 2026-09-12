@@ -1,15 +1,34 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
 
 class InspireService {
   static const String baseUrl = 'https://inspirehep.net/api/literature';
+  static const String localBackendUrl = 'http://localhost:8000/api/search';
 
   Future<List<Article>> search({
     required String query,
     int maxResults = 50,
     String sortBy = 'date',
   }) async {
+    if (kIsWeb) {
+      try {
+        final Uri url = Uri.parse(
+            '$localBackendUrl?preset_type=custom&custom_query=${Uri.encodeComponent(query)}&max_results=$maxResults&source=inspire');
+        final response = await http.get(url).timeout(const Duration(seconds: 4));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final List articlesJson = data['articles'] ?? [];
+          if (articlesJson.isNotEmpty) {
+            return articlesJson
+                .map((j) => Article.fromJson(Map<String, dynamic>.from(j)))
+                .toList();
+          }
+        }
+      } catch (_) {}
+    }
+
     String sortOrder = 'mostrecent';
     if (sortBy == 'citations') sortOrder = 'mostcited';
 

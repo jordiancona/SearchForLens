@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../providers/search_provider.dart';
@@ -51,6 +52,23 @@ class ArticleCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
+                  IconButton(
+                    tooltip: 'Compartir enlace',
+                    icon: const Icon(Icons.share_outlined, color: Color(0xFF8B5CF6)),
+                    onPressed: () {
+                      final shareLink = article.url ?? article.pdfUrl ?? '';
+                      if (shareLink.isNotEmpty) {
+                        Clipboard.setData(ClipboardData(text: shareLink));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('¡Enlace copiado al portapapeles! 🔗\n$shareLink'),
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                   IconButton(
                     icon: Icon(
                       isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,

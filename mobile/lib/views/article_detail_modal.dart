@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/article.dart';
+import '../providers/search_provider.dart';
 
 class ArticleDetailModal extends StatelessWidget {
   final Article article;
@@ -111,6 +113,67 @@ class ArticleDetailModal extends StatelessWidget {
                         label: const Text('Enlace Oficial'),
                         onPressed: () => _launchUrl(article.url!),
                       ),
+                    if (article.url != null || article.pdfUrl != null)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                        icon: const Icon(Icons.share_rounded, size: 18),
+                        label: const Text('🔗 Compartir Enlace'),
+                        onPressed: () {
+                          final shareLink = article.url ?? article.pdfUrl ?? '';
+                          if (shareLink.isNotEmpty) {
+                            Clipboard.setData(ClipboardData(text: shareLink));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('¡Enlace del artículo copiado al portapapeles! 🔗\n$shareLink'),
+                                backgroundColor: const Color(0xFF8B5CF6),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                      icon: const Icon(Icons.bookmark_add_rounded, size: 18),
+                      label: const Text('📚 Guardar en Zotero'),
+                      onPressed: () async {
+                        final provider = Provider.of<SearchProvider>(context, listen: false);
+                        if (provider.zoteroUserId.isEmpty || provider.zoteroApiKey.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('⚠️ Configura tu Zotero User ID y API Key en Ajustes ⚙️'),
+                              backgroundColor: Colors.amber,
+                            ),
+                          );
+                          return;
+                        }
+                        try {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Enviando artículo a tu biblioteca de Zotero... 📚'),
+                              backgroundColor: Color(0xFFDC2626),
+                            ),
+                          );
+                          await provider.uploadArticleToZotero(article);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('¡"${article.title}" guardado con éxito en Zotero! ✅'),
+                                backgroundColor: const Color(0xFF059669),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('❌ Error en Zotero: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
                   ],
                 ),
                 const Divider(height: 32, color: Color(0xFF334155)),

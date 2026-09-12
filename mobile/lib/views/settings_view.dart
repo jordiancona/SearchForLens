@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/search_provider.dart';
 import '../services/ads_service.dart';
+import '../services/zotero_service.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -13,14 +14,22 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   late TextEditingController _adsKeyCtrl;
+  late TextEditingController _zoteroUserIdCtrl;
+  late TextEditingController _zoteroApiKeyCtrl;
+
   bool _isTestingToken = false;
   String? _adsStatusMsg;
+
+  bool _isTestingZotero = false;
+  String? _zoteroStatusMsg;
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<SearchProvider>(context, listen: false);
     _adsKeyCtrl = TextEditingController(text: provider.adsApiKey);
+    _zoteroUserIdCtrl = TextEditingController(text: provider.zoteroUserId);
+    _zoteroApiKeyCtrl = TextEditingController(text: provider.zoteroApiKey);
   }
 
   Future<void> _verifyAdsKey() async {
@@ -40,10 +49,36 @@ class _SettingsViewState extends State<SettingsView> {
     });
   }
 
+  Future<void> _verifyZoteroKey() async {
+    setState(() {
+      _isTestingZotero = true;
+      _zoteroStatusMsg = null;
+    });
+
+    final valid = await ZoteroService.verifyCredentials(
+      _zoteroUserIdCtrl.text,
+      _zoteroApiKeyCtrl.text,
+    );
+
+    setState(() {
+      _isTestingZotero = false;
+      _zoteroStatusMsg = valid
+          ? '✅ Conexión con Zotero exitosa. User ID y API Key válidos.'
+          : '❌ User ID o API Key de Zotero inválidos.';
+    });
+  }
+
   Future<void> _openNasaAdsTokenPage() async {
     final Uri url = Uri.parse('https://ui.adsabs.harvard.edu/user/settings/token');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch NASA ADS token page');
+    }
+  }
+
+  Future<void> _openZoteroKeyPage() async {
+    final Uri url = Uri.parse('https://www.zotero.org/settings/keys');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch Zotero settings page');
     }
   }
 
@@ -103,6 +138,69 @@ class _SettingsViewState extends State<SettingsView> {
               _adsStatusMsg!,
               style: TextStyle(
                 color: _adsStatusMsg!.startsWith('✅') ? Colors.greenAccent : Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+
+          const Divider(height: 40, color: Color(0xFF334155)),
+
+          // Zotero API Section
+          const Text(
+            '📚 Zotero Web API v3',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Sincroniza tus artículos directamente a tu biblioteca de Zotero ingresando tu User ID y API Key.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _zoteroUserIdCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Tu Zotero User ID (ej. 1234567)...',
+              filled: true,
+              fillColor: Color(0xFF1E293B),
+              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            ),
+            onChanged: (val) => provider.setZoteroUserId(val),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _zoteroApiKeyCtrl,
+            obscureText: true,
+            decoration: const InputDecoration(
+              hintText: 'Pega tu API Key de Zotero aquí...',
+              filled: true,
+              fillColor: Color(0xFF1E293B),
+              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            ),
+            onChanged: (val) => provider.setZoteroApiKey(val),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: const Text('Verificar Zotero'),
+                onPressed: _isTestingZotero ? null : _verifyZoteroKey,
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Obtener Key Zotero'),
+                onPressed: _openZoteroKeyPage,
+              ),
+            ],
+          ),
+          if (_zoteroStatusMsg != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _zoteroStatusMsg!,
+              style: TextStyle(
+                color: _zoteroStatusMsg!.startsWith('✅') ? Colors.greenAccent : Colors.redAccent,
                 fontWeight: FontWeight.bold,
               ),
             ),

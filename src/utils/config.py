@@ -14,6 +14,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "gdrive_token_path": os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "token.json"),
     "gdrive_folder_id": "",
     "gdrive_folder_name": "SearchForLens",
+    "zotero_user_id": "",
+    "zotero_api_key": "",
     "favorites": []  # List of article dicts
 }
 
@@ -123,6 +125,29 @@ class ConfigManager:
     def get_google_client_secret(self) -> str:
         env_vars = self._load_env_file()
         return env_vars.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    # --- Zotero Settings ---
+    def get_zotero_user_id(self) -> str:
+        uid = self._config.get("zotero_user_id", "").strip()
+        if not uid:
+            env_vars = self._load_env_file()
+            uid = env_vars.get("ZOTERO_USER_ID") or os.getenv("ZOTERO_USER_ID", "")
+        return uid.strip()
+
+    def set_zotero_user_id(self, user_id: str) -> None:
+        self._config["zotero_user_id"] = user_id.strip()
+        self.save()
+
+    def get_zotero_api_key(self) -> str:
+        key = self._config.get("zotero_api_key", "").strip()
+        if not key:
+            env_vars = self._load_env_file()
+            key = env_vars.get("ZOTERO_API_KEY") or os.getenv("ZOTERO_API_KEY", "")
+        return key.strip()
+
+    def set_zotero_api_key(self, api_key: str) -> None:
+        self._config["zotero_api_key"] = api_key.strip()
+        self.save()
 
     # --- Favorites System ---
     def get_favorites(self) -> List[Article]:

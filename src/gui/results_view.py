@@ -109,6 +109,12 @@ class ArticleCardWidget(QFrame):
             btn_web.clicked.connect(lambda: webbrowser.open(self.article.url))
             actions_layout.addWidget(btn_web)
 
+        if self.article.url or self.article.pdf_url:
+            btn_share = QPushButton("🔗 Compartir Enlace")
+            btn_share.setObjectName("CardActionButton")
+            btn_share.clicked.connect(self._share_link)
+            actions_layout.addWidget(btn_share)
+
         btn_copy = QPushButton("📋 BibTeX")
         btn_copy.setObjectName("CardActionButton")
         btn_copy.clicked.connect(self._copy_bibtex)
@@ -124,6 +130,18 @@ class ArticleCardWidget(QFrame):
 
         actions_layout.addStretch()
         layout.addLayout(actions_layout)
+
+    def _share_link(self):
+        link = self.article.url or self.article.pdf_url or ""
+        if link:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(link)
+            btn = self.sender()
+            if isinstance(btn, QPushButton):
+                orig_text = btn.text()
+                btn.setText("✓ ¡Enlace Copiado!")
+                from PyQt6.QtCore import QTimer
+                QTimer.singleShot(1500, lambda: btn.setText(orig_text))
 
     def _copy_bibtex(self):
         clipboard = QApplication.clipboard()
@@ -144,6 +162,8 @@ class ResultsView(QWidget):
 
     gdrive_export_requested = pyqtSignal(list, str)
     gdrive_pdf_requested = pyqtSignal(Article)
+    zotero_export_requested = pyqtSignal(list)
+    zotero_single_requested = pyqtSignal(Article)
     favorites_changed = pyqtSignal()
 
     def __init__(self, config_manager: ConfigManager, parent=None):
@@ -252,6 +272,8 @@ class ResultsView(QWidget):
             self._toggle_favorite(article)
         elif res == 101:  # Code returned when user clicks upload PDF to Drive
             self.gdrive_pdf_requested.emit(article)
+        elif res == 102:  # Code returned when user clicks upload article to Zotero
+            self.zotero_single_requested.emit(article)
 
     def _toggle_favorite(self, article: Article):
         now_fav = self.config_manager.toggle_favorite(article)
@@ -275,6 +297,8 @@ class ResultsView(QWidget):
         act_gd_bib = menu.addAction("☁️ Subir BibTeX a Google Drive")
         act_gd_csv = menu.addAction("☁️ Subir CSV a Google Drive")
         act_gd_json = menu.addAction("☁️ Subir JSON a Google Drive")
+        menu.addSeparator()
+        act_zotero = menu.addAction("📚 Sincronizar / Exportar a Zotero")
 
         action = menu.exec(self.cursor().pos())
         if action == act_bib:
@@ -289,6 +313,8 @@ class ResultsView(QWidget):
             self.gdrive_export_requested.emit(self.displayed_articles, "csv")
         elif action == act_gd_json:
             self.gdrive_export_requested.emit(self.displayed_articles, "json")
+        elif action == act_zotero:
+            self.zotero_export_requested.emit(self.displayed_articles)
 
     def _export_to_file(self, filter_str: str, export_func):
         file_path, _ = QFileDialog.getSaveFileName(self, "Guardar Archivo", "", filter_str)
